@@ -14,7 +14,9 @@ export default {
   *
   * @return {String} The translated string
   */
-  getTranslation: function (msgid, n = 1, context = null, defaultPlural = null, language = _Vue.config.language) {
+  getTranslation: function (msgid, n = 1, context = null, defaultPlural = null) {
+
+    let language = this.$root.language
 
     if (!msgid) {
       return ''  // Allow empty strings.

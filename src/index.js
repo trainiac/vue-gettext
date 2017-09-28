@@ -1,8 +1,5 @@
 import Component from './component'
-import Directive from './directive'
-import Config from './config'
 import interpolate from './interpolate'
-import Override from './override'
 import translate from './translate'
 import { shareVueInstance } from './localVue'
 
@@ -14,9 +11,9 @@ let GetTextPlugin = function (Vue, options = {}) {
   let defaultConfig = {
     availableLanguages: { en_US: 'English' },
     defaultLanguage: 'en_US',
-    languageVmMixin: {},
     silent: Vue.config.silent,
     translations: null,
+    hot: false,
   }
 
   Object.keys(options).forEach(key => {
@@ -31,28 +28,42 @@ let GetTextPlugin = function (Vue, options = {}) {
 
   options = Object.assign(defaultConfig, options)
 
-  languageVm = new Vue({
-    created: function () {
-      // Non-reactive data.
-      this.available = options.availableLanguages
-    },
-    data: {
-      current: options.defaultLanguage,
-    },
-    mixins: [options.languageVmMixin],
-  })
-
   shareVueInstance(Vue)
 
-  Override(Vue, languageVm)
+  Object.defineProperty(Vue.config, 'getTextPluginSilent', {
+    enumerable: true,
+    writable: true,
+    value: options.silent,
+  })
 
-  Config(Vue, languageVm, options.silent)
+  if (options.hot) {
+    // In development we want the translate tags to hot reload
+    const overrides = {
+      data () {
+        return {
+          msgid: '',
+        }
+      },
+      beforeUpdate () {
+        this.msgid = this.getMsgId()
+      },
+      methods: {
+        getMsgId () {
+          if (this.$slots.default) {
+            if (this.$slots.default[0].hasOwnProperty('text')) {
+              return this.$slots.default[0].text.trim()
+            }
+            return this.$slots.default[0].trim()
+          }
 
-  // Makes <translate> available as a global component.
-  Vue.component('translate', Component)
-
-  // An option to support translation with HTML content: `v-translate`.
-  Vue.directive('translate', Directive)
+          return ''
+        },
+      },
+    }
+    Vue.component('translate', Component.extend(overrides))
+  } else {
+    Vue.component('translate', Component)
+  }
 
   // Exposes global properties.
   Vue.$translations = options.translations

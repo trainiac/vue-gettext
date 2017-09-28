@@ -184,12 +184,13 @@ var translate = {
   *
   * @return {String} The translated string
   */
-  getTranslation: function (msgid, n, context, defaultPlural, language) {
+  getTranslation: function (msgid, n, context, defaultPlural) {
     if ( n === void 0 ) n = 1;
     if ( context === void 0 ) context = null;
     if ( defaultPlural === void 0 ) defaultPlural = null;
-    if ( language === void 0 ) language = _Vue.config.language;
 
+
+    var language = this.$root.language;
 
     if (!msgid) {
       return ''  // Allow empty strings.
@@ -400,7 +401,7 @@ var Component = {
         this.translateN,
         this.translateContext,
         this.isPlural ? this.translatePlural : null,
-        this.$language.current
+        this.$root.language
       );
 
       var context = this.$parent;
@@ -507,161 +508,6 @@ var interpolate = function (msgid, context) {
 interpolate.INTERPOLATION_RE = INTERPOLATION_RE;
 interpolate.INTERPOLATION_PREFIX = '%{';
 
-var updateTranslation = function (el, binding, vnode) {
-
-  var attrs = vnode.data.attrs || {};
-  var msgid = el.dataset.msgid;
-  var translateContext = attrs['translate-context'];
-  var translateN = attrs['translate-n'];
-  var translatePlural = attrs['translate-plural'];
-  var isPlural = translateN !== undefined && translatePlural !== undefined;
-  var context = vnode.context;
-
-  if (!isPlural && (translateN || translatePlural)) {
-    throw new Error('`translate-n` and `translate-plural` attributes must be used together:' + msgid + '.')
-  }
-
-  if (!_Vue.config.getTextPluginSilent && attrs['translate-params']) {
-    console.warn(("`translate-params` is required as an expression for v-translate directive. Please change to `v-translate='params'`: " + msgid));
-  }
-
-  if (binding.value && typeof binding.value === 'object') {
-    context = Object.assign({}, vnode.context, binding.value);
-  }
-
-  var translation = translate.getTranslation(
-    msgid,
-    translateN,
-    translateContext,
-    isPlural ? translatePlural : null,
-    el.dataset.currentLanguage
-  );
-
-  var msg = interpolate(translation, context);
-
-  el.innerHTML = msg;
-
-};
-
-/**
- * A directive to translate content according to the current language.
- *
- * Use this directive instead of the component if you need to translate HTML content.
- * It's too tricky to support HTML content within the component because we cannot get the raw HTML to use as `msgid`.
- *
- * This directive has a similar interface to the <translate> component, supporting
- * `translate-comment`, `translate-context`, `translate-plural`, `translate-n`.
- *
- * `<p v-translate translate-comment='Good stuff'>This is <strong class='txt-primary'>Sparta</strong>!</p>`
- *
- * If you need interpolation, you must add an expression that outputs binding value that changes with each of the
- * context variable:
- * `<p v-translate="fullName + location">I am %{ fullName } and from %{ location }</p>`
- */
-var Directive = {
-
-  bind: function bind (el, binding, vnode) {
-
-    // Fix the problem with v-if, see #29.
-    // Vue re-uses DOM elements for efficiency if they don't have a key attribute, see:
-    // https://vuejs.org/v2/guide/conditional.html#Controlling-Reusable-Elements-with-key
-    // https://vuejs.org/v2/api/#key
-    if (!vnode.key) {
-      vnode.key = uuid();
-    }
-
-    // Get the raw HTML and store it in the element's dataset (as advised in Vue's official guide).
-    // Note: not trimming the content here as it should be picked up as-is by the extractor.
-    var msgid = el.innerHTML;
-    el.dataset.msgid = msgid;
-
-    // Store the current language in the element's dataset.
-    el.dataset.currentLanguage = _Vue.config.language;
-
-    // Output a info in the console if an interpolation is required but no expression is provided.
-    if (!_Vue.config.getTextPluginSilent) {
-      var hasInterpolation = msgid.indexOf(interpolate.INTERPOLATION_PREFIX) !== -1;
-      if (hasInterpolation && !binding.expression) {
-        console.info(("No expression is provided for change detection. The translation for this key will be static:\n" + msgid));
-      }
-    }
-
-    updateTranslation(el, binding, vnode);
-
-  },
-
-  update: function update (el, binding, vnode) {
-
-    var doUpdate = false;
-
-    // Trigger an update if the language has changed.
-    if (el.dataset.currentLanguage !== _Vue.config.language) {
-      el.dataset.currentLanguage = _Vue.config.language;
-      doUpdate = true;
-    }
-
-    // Trigger an update if an optional bound expression has changed.
-    if (!doUpdate && binding.expression && (binding.value !== binding.oldValue)) {
-      doUpdate = true;
-    }
-
-    if (doUpdate) {
-      updateTranslation(el, binding, vnode);
-    }
-
-  },
-
-};
-
-var Config = function (Vue, languageVm, getTextPluginSilent) {
-
-  /*
-   * Adds a `language` property to `Vue.config` and makes it reactive:
-   * Vue.config.language = 'fr_FR'
-   */
-  Object.defineProperty(Vue.config, 'language', {
-    enumerable: true,
-    configurable: true,
-    get: function () { return languageVm.current },
-    set: function (val) { languageVm.current = val; },
-  });
-
- /*
-  * Adds a `getTextPluginSilent` property to `Vue.config`.
-  * Used to enable/disable some console warnings.
-  */
-  Object.defineProperty(Vue.config, 'getTextPluginSilent', {
-    enumerable: true,
-    writable: true,
-    value: getTextPluginSilent,
-  });
-
-};
-
-var Override = function (Vue, languageVm) {
-
-  // Override the main init sequence. This is called for every instance.
-  var init = Vue.prototype._init;
-  Vue.prototype._init = function (options) {
-    if ( options === void 0 ) options = {};
-
-    var root = options._parent || options.parent || this;
-    // Expose languageVm to every instance.
-    this.$language = root.$language || languageVm;
-    init.call(this, options);
-  };
-
-  // Override the main destroy sequence to destroy all languageVm watchers.
-  var destroy = Vue.prototype._destroy;
-  Vue.prototype._destroy = function () {
-    this.$language = null;
-    destroy.apply(this, arguments);
-  };
-
-};
-
-var languageVm;  // Singleton.
-
 var GetTextPlugin = function (Vue, options) {
   if ( options === void 0 ) options = {};
 
@@ -669,9 +515,9 @@ var GetTextPlugin = function (Vue, options) {
   var defaultConfig = {
     availableLanguages: { en_US: 'English' },
     defaultLanguage: 'en_US',
-    languageVmMixin: {},
     silent: Vue.config.silent,
     translations: null,
+    hot: false,
   };
 
   Object.keys(options).forEach(function (key) {
@@ -686,28 +532,42 @@ var GetTextPlugin = function (Vue, options) {
 
   options = Object.assign(defaultConfig, options);
 
-  languageVm = new Vue({
-    created: function () {
-      // Non-reactive data.
-      this.available = options.availableLanguages;
-    },
-    data: {
-      current: options.defaultLanguage,
-    },
-    mixins: [options.languageVmMixin],
-  });
-
   shareVueInstance(Vue);
 
-  Override(Vue, languageVm);
+  Object.defineProperty(Vue.config, 'getTextPluginSilent', {
+    enumerable: true,
+    writable: true,
+    value: options.silent,
+  });
 
-  Config(Vue, languageVm, options.silent);
+  if (options.hot) {
+    // In development we want the translate tags to hot reload
+    var overrides = {
+      data: function data () {
+        return {
+          msgid: '',
+        }
+      },
+      beforeUpdate: function beforeUpdate () {
+        this.msgid = this.getMsgId();
+      },
+      methods: {
+        getMsgId: function getMsgId () {
+          if (this.$slots.default) {
+            if (this.$slots.default[0].hasOwnProperty('text')) {
+              return this.$slots.default[0].text.trim()
+            }
+            return this.$slots.default[0].trim()
+          }
 
-  // Makes <translate> available as a global component.
-  Vue.component('translate', Component);
-
-  // An option to support translation with HTML content: `v-translate`.
-  Vue.directive('translate', Directive);
+          return ''
+        },
+      },
+    };
+    Vue.component('translate', Component.extend(overrides));
+  } else {
+    Vue.component('translate', Component);
+  }
 
   // Exposes global properties.
   Vue.$translations = options.translations;

@@ -72,7 +72,7 @@ export default {
         this.translateN,
         this.translateContext,
         this.isPlural ? this.translatePlural : null,
-        this.$language.current
+        this.$root.language
       )
 
       let context = this.$parent
