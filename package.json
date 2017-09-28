@@ -1,5 +1,5 @@
 {
-  "name": "vue-gettext",
+  "name": "@trainiac/vue-gettext",
   "version": "0.1.0",
   "description": "Translate your Vue.js applications with gettext",
   "main": "dist/vue-gettext.js",
@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/trainiac/vue-gettext"
+    "url": "git+https://github.com/trainiac/vue-gettext.git"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
@@ -71,5 +71,13 @@
   "files": [
     "dist",
     "src"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/trainiac/vue-gettext/issues"
+  },
+  "homepage": "https://github.com/trainiac/vue-gettext#readme",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {}
 }
