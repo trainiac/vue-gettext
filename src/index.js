@@ -36,6 +36,9 @@ let GetTextPlugin = function (Vue, options = {}) {
     value: options.silent,
   })
 
+  // Makes <translate> available as a global component.
+  Vue.component('translate', Component)
+
   if (options.hot) {
     // In development we want the translate tags to hot reload
     const overrides = {
@@ -60,18 +63,17 @@ let GetTextPlugin = function (Vue, options = {}) {
         },
       },
     }
-    Vue.component('translate', Component.extend(overrides))
-  } else {
-    Vue.component('translate', Component)
+    const components = Vue.options.components
+    components.translate = components.translate.extend(overrides)
   }
 
   // Exposes global properties.
   Vue.$translations = options.translations
   // Exposes instance methods.
-  Vue.prototype.$gettext = translate.gettext.bind(translate)
-  Vue.prototype.$pgettext = translate.pgettext.bind(translate)
-  Vue.prototype.$ngettext = translate.ngettext.bind(translate)
-  Vue.prototype.$npgettext = translate.npgettext.bind(translate)
+  Vue.mixin({
+    methods: translate,
+  })
+
   Vue.prototype.$gettextInterpolate = interpolate.bind(interpolate)
 
 }
