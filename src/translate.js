@@ -127,7 +127,7 @@ export default {
   *
   * @return {String} The translated string
   */
-  $npgettext: function (context, msgid, plural, n) {
+  $npgettext  : function (context, msgid, plural, n) {
     return getTranslation(msgid, this.$root.language, n, context, plural)
   },
 
