@@ -1,5 +1,5 @@
 /**
- * vue-gettext v0.1.0
+ * vue-gettext v0.1.2
  * (c) 2017 Polyconseil
  * @license MIT
  */
@@ -306,7 +306,7 @@ var translate = {
   *
   * @return {String} The translated string
   */
-  'ngettext': function (msgid, plural, n) {
+  $ngettext: function (msgid, plural, n) {
     return getTranslation(msgid, this.$root.language, n, null, plural)
   },
 
@@ -322,7 +322,7 @@ var translate = {
   *
   * @return {String} The translated string
   */
-  'npgettext': function (context, msgid, plural, n) {
+  $npgettext  : function (context, msgid, plural, n) {
     return getTranslation(msgid, this.$root.language, n, context, plural)
   },
 
