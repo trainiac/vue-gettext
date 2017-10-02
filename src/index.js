@@ -3,9 +3,6 @@ import interpolate from './interpolate'
 import translate from './translate'
 import { shareVueInstance } from './localVue'
 
-
-let languageVm  // Singleton.
-
 let GetTextPlugin = function (Vue, options = {}) {
 
   let defaultConfig = {
@@ -69,7 +66,7 @@ let GetTextPlugin = function (Vue, options = {}) {
           return ''
         },
       },
-    }
+    })
     const components = Vue.options.components
     components.translate = components.translate.extend(overrides)
   }
