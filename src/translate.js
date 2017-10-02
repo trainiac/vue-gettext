@@ -111,7 +111,7 @@ export default {
   *
   * @return {String} The translated string
   */
-  'ngettext': function (msgid, plural, n) {
+  $ngettext: function (msgid, plural, n) {
     return getTranslation(msgid, this.$root.language, n, null, plural)
   },
 
@@ -127,7 +127,7 @@ export default {
   *
   * @return {String} The translated string
   */
-  'npgettext': function (context, msgid, plural, n) {
+  $npgettext: function (context, msgid, plural, n) {
     return getTranslation(msgid, this.$root.language, n, context, plural)
   },
 
