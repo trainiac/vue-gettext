@@ -39,9 +39,16 @@ let GetTextPlugin = function (Vue, options = {}) {
   // Makes <translate> available as a global component.
   Vue.component('translate', Component)
 
+  const overrides = {
+    render () {
+      // Don't render enclosing tag
+      return this._v(this.translation) // eslint-disable-line no-underscore-dangle
+    },
+  }
+
   if (options.hot) {
     // In development we want the translate tags to hot reload
-    const overrides = {
+    Object.assign(overrides, {
       data () {
         return {
           msgid: '',
